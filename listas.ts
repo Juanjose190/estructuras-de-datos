@@ -1,125 +1,96 @@
 
-//Simulador de un Sistema de Gestión de Restaurante
-interface Dish {
-    name: string;
-    price: number;
+enum OrderStage {
+  SolicitudPedido = 'Request order',
+  RecepcionPedido = 'Receive order',
+  ElaboracionPedido = 'Prepare order',
+  SolicitudCuenta = 'Request bill',
+  CalculoTotal = 'Calculate total',
+  SirvePedido = 'Serve order',
+  PedirCuenta = 'Ask for bill',
+  Pago = 'Pay',
+  Fin = 'End'
 }
 
-interface Ingredient {
-    name: string;
-    quantity: number;
-    unit: string;
+enum Actor {
+  Cliente = 'Customer',
+  Mozo = 'Waiter',
+  Caja = 'Cashier',
+  Cocina = 'Kitchen'
 }
 
-interface Table {
-    status: 'free' | 'occupied';
-    customers: number;
+interface Order {
+  id: string;
+  currentStage: OrderStage;
+  actor: Actor;
+  items: string[];
+  total?: number;
 }
 
-class Restaurant {
-    private menu: Dish[] = [];
-    private pendingOrders: string[][] = [];
-    private completedOrders: string[][] = [];
-    private inventory: Ingredient[] = [];
-    private tables: Table[] = [];
+class RestaurantOrderProcess {
+  private order: Order;
 
-    public addDish(name: string, price: number): void {
-        this.menu.push({ name, price });
-    }
+  constructor() {
+    this.order = {
+      id: this.generateOrderId(),
+      currentStage: OrderStage.SolicitudPedido,
+      actor: Actor.Cliente,
+      items: []
+    };
+  }
 
-    public addIngredient(name: string, quantity: number, unit: string): void {
-        this.inventory.push({ name, quantity, unit });
-    }
+  private generateOrderId(): string {
+    return `ORDER-${Date.now()}`;
+  }
 
-    public takeOrder(dishes: string[]): void {
-        this.pendingOrders.push(dishes);
-        console.log("Order taken:", dishes);
-    }
+  selectItems(items: string[]): void {
+    this.order.items = items;
+    this.order.currentStage = OrderStage.RecepcionPedido;
+    this.order.actor = Actor.Mozo;
+  }
 
-    public prepareOrder(): void {
-        if (this.pendingOrders.length > 0) {
-            const order = this.pendingOrders.shift();
-            if (order) {
-                this.completedOrders.push(order);
-                console.log("Order prepared:", order);
-            }
-        } else {
-            console.log("No pending orders.");
-        }
-    }
+  receiveOrder(): void {
+    this.order.currentStage = OrderStage.ElaboracionPedido;
+    this.order.actor = Actor.Cocina;
+  }
 
-    public serveOrder(): void {
-        if (this.completedOrders.length > 0) {
-            const order = this.completedOrders.pop();
-            console.log("Order served:", order);
-        } else {
-            console.log("No completed orders.");
-        }
-    }
+  prepareOrder(): void {
+    this.order.currentStage = OrderStage.SirvePedido;
+    this.order.actor = Actor.Mozo;
+  }
 
-    public showMenu(): void {
-        console.log("Menu:");
-        this.menu.forEach(dish => {
-            console.log(`- ${dish.name}: $${dish.price}`);
-        });
-    }
+  serveOrder(): void {
+    this.order.currentStage = OrderStage.SolicitudCuenta;
+    this.order.actor = Actor.Cliente;
+  }
 
-    public showInventory(): void {
-        console.log("Inventory:");
-        this.inventory.forEach(ingredient => {
-            console.log(`- ${ingredient.name}: ${ingredient.quantity} ${ingredient.unit}`);
-        });
-    }
+  requestBill(): void {
+    this.order.currentStage = OrderStage.CalculoTotal;
+    this.order.actor = Actor.Caja;
+  }
 
-    public showCompletedOrders(): void {
-        console.log("Completed orders:");
-        [...this.completedOrders].reverse().forEach(order => {
-            console.log("-", order);
-        });
-    }
+  calculateTotal(): void {
+    this.order.total = this.order.items.length * 10;
+    this.order.currentStage = OrderStage.PedirCuenta;
+    this.order.actor = Actor.Cliente;
+  }
 
-    public initializeTables(numTables: number): void {
-        this.tables = Array(numTables).fill(null).map(() => ({
-            status: 'free',
-            customers: 0
-        }));
-    }
+  payBill(): void {
+    this.order.currentStage = OrderStage.Fin;
+    this.order.actor = Actor.Mozo;
+  }
 
-    public assignTable(tableNumber: number, numCustomers: number): void {
-        if (tableNumber >= 0 && tableNumber < this.tables.length) {
-            if (this.tables[tableNumber].status === 'free') {
-                this.tables[tableNumber] = {
-                    status: 'occupied',
-                    customers: numCustomers
-                };
-                console.log(`Table ${tableNumber + 1} assigned to ${numCustomers} customers.`);
-            } else {
-                console.log(`Table ${tableNumber + 1} is not available.`);
-            }
-        } else {
-            console.log("Invalid table number.");
-        }
-    }
-
-    public showTableStatus(): void {
-        console.log("Table status:");
-        this.tables.forEach((table, index) => {
-            console.log(`- Table ${index + 1}: ${table.status}, Customers: ${table.customers}`);
-        });
-    }
+  getOrderStatus(): Order {
+    return this.order;
+  }
 }
 
-const restaurant = new Restaurant();
-restaurant.addDish("Burger", 10);
-restaurant.addDish("Pizza", 12);
-restaurant.addIngredient("Bread", 100, "units");
-restaurant.addIngredient("Meat", 50, "kg");
-restaurant.takeOrder(["Burger", "Soda"]);
-restaurant.prepareOrder();
-restaurant.serveOrder();
-restaurant.showMenu();
-restaurant.showInventory();
-restaurant.showCompletedOrders();
-restaurant.initializeTables(5);
-restaurant.assignTable(0, 4);
-restaurant.showTableStatus();
+const orderProcess = new RestaurantOrderProcess();
+orderProcess.selectItems(['Pizza', 'Soda']);
+orderProcess.receiveOrder();
+orderProcess.prepareOrder();
+orderProcess.serveOrder();
+orderProcess.requestBill();
+orderProcess.calculateTotal();
+orderProcess.payBill();
+
+console.log(orderProcess.getOrderStatus());
