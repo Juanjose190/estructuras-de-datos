@@ -1,10 +1,9 @@
 #store order management 
 
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Dict, Optional, Union
 from dataclasses import dataclass
 from datetime import datetime
 import time
-from collections import deque
 
 @dataclass
 class Customer:
@@ -40,12 +39,12 @@ class HistoryEntry:
 
 class Store:
     def __init__(self):
-        self.customers: List[Customer] = []
-        self.products: Dict[int, Product] = {}
-        self.orders: List[Order] = []
-        self.order_queue: deque = deque()
-        self.priority_orders: List[int] = []
-        self.order_history: List[HistoryEntry] = []
+        self.customers = []
+        self.products = {}
+        self.orders = []
+        self.order_queue = []
+        self.priority_orders = []
+        self.order_history = []
         
     def add_customer(self, name: str) -> int:
         customer_id = len(self.customers) + 1
@@ -125,7 +124,7 @@ class Store:
             return self._process_order(order_id)
         
         if self.order_queue:
-            order_id = self.order_queue.popleft()
+            order_id = self.order_queue.pop(0)
             return self._process_order(order_id)
         
         return None
@@ -142,16 +141,6 @@ class Store:
             status='processing',
             timestamp=datetime.now()
         ))
-        
-        def complete_order():
-            time.sleep(2)
-            order.status = 'completed'
-            
-            self.order_history.append(HistoryEntry(
-                order_id=order.id,
-                status='completed',
-                timestamp=datetime.now()
-            ))
         
         order.status = 'completed'
         self.order_history.append(HistoryEntry(
@@ -182,9 +171,7 @@ class Store:
             self.update_stock(item.product_id, item.quantity)
         
         if order_id in self.order_queue:
-            queue_list = list(self.order_queue)
-            queue_list.remove(order_id)
-            self.order_queue = deque(queue_list)
+            self.order_queue.remove(order_id)
             
         if order_id in self.priority_orders:
             self.priority_orders.remove(order_id)
